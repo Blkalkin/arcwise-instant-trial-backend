@@ -2,6 +2,7 @@ from fastapi import FastAPI, File, Form, UploadFile
 import duckdb
 # Imports the Google Cloud client library
 from google.cloud import storage
+import os
 
 
 app = FastAPI()
@@ -16,6 +17,22 @@ con.execute("SET s3_secret_access_key='Q7nZGfWCJZP3dKp0voMmkuIV41wkxb18Bv3xU67p'
 bucket_name = 'arcwise-instant-trial-storage'
 bucket = storage_client.bucket(bucket_name)
 
+@app.post("/upload")
+def upload(file: UploadFile = File(...)):
+    try:
+        contents = file.file.read()
+        with open(file.filename, 'wb') as f:
+            f.write(contents)
+        csv_to_parquet(file.filename)
+        upload_to_gcs_bucket('result','result.parquet',bucket)
+    except Exception:
+        return {"message": "There was an error uploading the file"}
+    finally:
+        print(file.filename)
+        os.remove(file.filename)
+        os.remove('result.parquet')
+        file.file.close()
+    return {"message": f"{test_gcs()}"}
 
 def upload_to_gcs_bucket(name, file_path, bucket):
     try:
@@ -31,10 +48,10 @@ def csv_to_parquet(file_path):
 
 
 def test_gcs():
-    print(con.execute("select * from read_parquet('s3://arcwise-instant-trial-storage/result')").fetchall())
+    return con.execute("select * from read_parquet('s3://arcwise-instant-trial-storage/result')").fetchall()
 
 
-if __name__ == '__main__':
-    test_gcs()
+
+    #test_gcs()
     #csv_to_parquet(file_path)
     #upload_to_gcs_bucket('result','result.parquet',bucket)
