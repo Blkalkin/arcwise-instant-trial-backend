@@ -1,5 +1,6 @@
 from fastapi import FastAPI, File, Form, UploadFile
 import duckdb
+from model import SqlQuery
 # Imports the Google Cloud client library
 from google.cloud import storage
 import os
@@ -34,6 +35,11 @@ def upload(file: UploadFile = File(...)):
         file.file.close()
     return {"message": f"{test_gcs()}"}
 
+@app.post("/query/")
+async def execute_query_gcs(query: SqlQuery):
+    query = SqlQuery.sql_string
+    return con.execute(f"{query}").fetchall()
+
 def upload_to_gcs_bucket(name, file_path, bucket):
     try:
         blob = bucket.blob(name)
@@ -50,8 +56,3 @@ def csv_to_parquet(file_path):
 def test_gcs():
     return con.execute("select * from read_parquet('s3://arcwise-instant-trial-storage/result')").fetchall()
 
-
-
-    #test_gcs()
-    #csv_to_parquet(file_path)
-    #upload_to_gcs_bucket('result','result.parquet',bucket)
