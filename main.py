@@ -24,16 +24,16 @@ def upload(file: UploadFile = File(...)):
         contents = file.file.read()
         with open(file.filename, 'wb') as f:
             f.write(contents)
-        csv_to_parquet(file.filename)
-        upload_to_gcs_bucket('result','result.parquet',bucket)
+        f_name_truncated = file.filename[:-4]
+        csv_to_parquet(f_name_truncated, file.filename)
+        upload_to_gcs_bucket(f_name_truncated, f'{f_name_truncated}.parquet', bucket)
     except Exception:
         return {"message": "There was an error uploading the file"}
     finally:
-        print(file.filename)
         os.remove(file.filename)
-        os.remove('result.parquet')
+        os.remove(f'{f_name_truncated}.parquet')
         file.file.close()
-    return {"message": f"{test_gcs()}"}
+    return {"message": "File uploaded"}
 
 @app.post("/query/")
 async def execute_query_gcs(query: SqlQuery):
@@ -48,8 +48,8 @@ def upload_to_gcs_bucket(name, file_path, bucket):
         print(e)
         return False
 
-def csv_to_parquet(file_path):
-    con.execute(f"COPY (SELECT * FROM read_csv_auto('{file_path}')) TO 'result.parquet' (FORMAT 'parquet')")
+def csv_to_parquet(file_name, file_path):
+    con.execute(f"COPY (SELECT * FROM read_csv_auto('{file_path}')) TO '{file_name}.parquet' (FORMAT 'parquet')")
 
 
 def test_gcs():
