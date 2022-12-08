@@ -37,8 +37,7 @@ def upload(file: UploadFile = File(...)):
 
 @app.post("/query/")
 async def execute_query_gcs(query: SqlQuery):
-    query = SqlQuery.sql_string
-    return con.execute(f"{query}").fetchall()
+    return con.execute(f"{query.sql_string}").fetchall()
 
 def upload_to_gcs_bucket(name, file_path, bucket):
     try:
