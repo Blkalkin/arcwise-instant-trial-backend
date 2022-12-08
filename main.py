@@ -37,7 +37,8 @@ def upload(file: UploadFile = File(...)):
 
 @app.post("/query/")
 async def execute_query_gcs(query: SqlQuery):
-    return con.execute(f"{query.sql_string}").fetchall()
+    sub_query = query.sql_string.replace(f"{query.file_name}.csv",f"read_parquet('s3://arcwise-instant-trial-storage/{query.file_name}')")
+    return con.execute(f"{sub_query}").fetchall()
 
 def upload_to_gcs_bucket(name, file_path, bucket):
     try:
